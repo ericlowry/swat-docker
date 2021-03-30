@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+. `dirname "$0"`/lib/utils.sh
+
+check_env
+
+echo ">> inserting sample data: USERs"
+
+insert_doc << EOF
+{
+    "_id":  "USER:eric",
+    "type": "USER",
+    "realm": "LOCAL",
+    "name": "eric",
+    "label": "Eric Lowry (local)",
+    "roles": [ "USER" ],
+    "password": "`hash xxx`",
+    "version": "`uuid`"
+}
+EOF
+
+insert_doc << EOF
+{
+    "_id":  "USER:elowry@us.ibm.com",
+    "type": "USER",
+    "realm": "W3ID",
+    "name": "elowry@us.ibm.com",
+    "label": "Eric Lowry (w3id)",
+    "roles": [ "USER" ],
+    "version": "`uuid`",
+    "version": "`uuid`"
+}
+EOF
+
+echo ">> inserting sample data: CLUSTERs"
+
+insert_doc << EOF
+{
+    "_id":  "CLUSTER:cp4i-master",
+    "type": "CLUSTER",
+    "label": "CP4I Master"     
+}
+EOF
+
+insert_doc << EOF
+{
+    "_id":  "CLUSTER:cp4i-01",
+    "type": "CLUSTER",
+    "label": "CP4I Clone 01"
+}
+EOF
+
+insert_doc << EOF
+{
+    "_id":  "CLUSTER:cp4i-02",
+    "type": "CLUSTER",
+    "label": "CP4I Clone 02"
+}
+EOF

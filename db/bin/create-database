@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+. `dirname "$0"`/lib/utils.sh
+
+check_env
+
+echo ">> deleting database: ${COUCHDB_DB_NAME}"
+
+curl \
+  -X DELETE \
+  ${COUCHDB_HOST}/${COUCHDB_DB_NAME} \
+  --user ${COUCHDB_USER}:${COUCHDB_PASSWORD}
+
+echo ">> creating database: ${COUCHDB_DB_NAME}"
+
+curl \
+  -X PUT \
+  ${COUCHDB_HOST}/${COUCHDB_DB_NAME}?partitioned=true \
+  --user ${COUCHDB_USER}:${COUCHDB_PASSWORD}
+
+echo ">> creating application views: ${COUCHDB_DB_NAME}/_design/${COUCHDB_VIEW_NAME}"
+
+curl \
+  -X PUT \
+  ${COUCHDB_HOST}/${COUCHDB_DB_NAME}/_design/part-views \
+  --user ${COUCHDB_USER}:${COUCHDB_PASSWORD} \
+  -H 'Content-Type: application/json' \
+  --data-binary @- << EOF
+{
+  "_id": "_design/part-views",
+  "views": {
+    "by-name": {
+      "reduce": "_count",
+      "map": "({name}) => name && emit(name, 1)"
+    },
+    "by-label": {
+      "reduce": "_count",
+      "map": "({label}) => label && emit(label, 1)"
+    },
+    "by-role": {
+      "reduce": "_count",
+      "map": "({roles}) => roles && roles.length && roles.forEach(role => emit(role, 1))"
+    },
+    "by-tag": {
+      "reduce": "_count",
+      "map": "({tags}) => tags && tags.length && tags.forEach(tag => emit(tag, 1))"
+    },
+    "USER-by-realm-name": {
+      "reduce": "_count",
+      "map": "({type,realm,name}) => type === 'USER' && realm && name && emit([realm,name],1)"
+    }
+  },
+  "language": "javascript",
+  "options": {
+    "partitioned": true
+  }
+}
+EOF
+
+echo ">> creating admin user"
+
+insert_doc << EOF
+{
+  "_id":  "USER:admin",
+  "type": "USER",
+  "realm": "LOCAL",
+  "name": "admin",
+  "label": "Administrator",
+  "roles": [ "USER", "ADMIN" ],
+  "password": "`hash "${COUCHDB_PASSWORD}"`",
+  "version": "`uuid`"
+}
+EOF

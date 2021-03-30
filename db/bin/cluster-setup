@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+. `dirname "$0"`/lib/utils.sh
+
+check_env
+
+echo "cluster setup: ${COUCHDB_HOST} ${COUCHDB_USER}:${COUCHDB_PASSWORD}"
+
+curl \
+  ${COUCHDB_HOST}/_cluster_setup \
+  --user ${COUCHDB_USER}:${COUCHDB_PASSWORD} \
+  -H 'Content-Type: application/json' \
+  --data-binary @- << EOF
+{
+  "action":"enable_single_node",
+  "singlenode":true,
+  "bind_address":"0.0.0.0",
+  "username":"${COUCHDB_USER}",
+  "password":"${COUCHDB_PASSWORD}"
+}
+EOF
+
+# display cluster state i.e. {"state":"single_node_enabled"}
+curl \
+  ${COUCHDB_HOST}/_cluster_setup \
+  --user ${COUCHDB_USER}:${COUCHDB_PASSWORD}

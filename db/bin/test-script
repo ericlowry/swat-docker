@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+. `dirname "$0"`/lib/utils.sh
+
+check_env
+
+function change_it() {
+
+    body=$(
+        cat /dev/stdin \
+        | jq --arg u admin --argjson ts `timestamp` \
+            '. + {cdate: $ts, cuser: $u, mdate: $ts, muser: $u}'
+    )
+
+    echo $body | jq
+}
+
+function insert_doc() {
+
+    cat /dev/stdin \
+    |   jq --arg u admin --argjson ts `timestamp` \
+            '. + {cdate: $ts, cuser: $u, mdate: $ts, muser: $u}' \
+    |   curl \
+            -X POST \
+            ${COUCHDB_HOST}/${COUCHDB_DB_NAME} \
+            --user ${COUCHDB_USER}:${COUCHDB_PASSWORD} \
+            -H 'Content-Type: application/json' \
+            --data-binary @-
+
+}
+
+
+insert_doc << EOF
+{
+    "_id":   "JUNK:`uuid`",
+    "type":  "JUNK"
+}
+EOF
